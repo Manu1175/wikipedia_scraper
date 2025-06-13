@@ -2,22 +2,23 @@ import requests
 import re
 import json
 from bs4 import BeautifulSoup as bs
+import pprint
 
 def first_paragraph(wikipedia_url, session):
 
-    req = session.get(wikipedia_url)
+    req = session.get(wikipedia_url, timeout=10)
+    req.raise_for_status() #returns HTTPerror if not working
     soup = bs(req.text,"lxml")
     
     paragraph = soup.find_all("p")
 
     parameter = r'([\[]).*?([\]])|[ⓘ]'
     
-   
-    for el in soup.find_all("p"):
-        paragraph_element = el.get_text()
+    for el in paragraph:
+        paragraph_element = el.get_text(strip=True)
         for el2 in paragraph_element:
             if el2 == 'ⓘ':
-                first_paragraph = el.get_text()
+                first_paragraph = paragraph_element
                 break
             else:
                 first_paragraph = paragraph[2].get_text()
@@ -60,8 +61,17 @@ def get_leaders():
     return leaders_per_country
 
 def save(leaders_per_country):
-    with open("leaders_per_country.json", "w", encoding="utf-8") as outfile:
-        json.dump(leaders_per_country, outfile, indent=4, ensure_ascii=False)
+    pprint.pprint(leaders_per_country)
+    try:
+        with open("leaders_per_country.json", "w", encoding="utf-8") as f:
+            json.dump(leaders_per_country, f, indent=4, ensure_ascii=False)
+        print("Data successfully saved to leaders_per_country.json")
+    except TypeError as e:
+        print(f"JSON dump failed: {e}")
+    except Exception as e:
+        print(f"Unexpected error while saving: {e}")
         
 # Main execution
+data = get_leaders()
+print(get_leaders())
 save(get_leaders())
